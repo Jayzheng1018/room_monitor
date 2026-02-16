@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Robot Master</title>
+
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+    <div id="view-home" class="view active">
+        <h1 style="color:var(--p); margin-bottom:50px;">ROBOT MASTER</h1>
+        <div class="home-grid">
+            <div class="big-card" onclick="startMappingSystem()">
+                <div class="icon-lg">🗺️</div><div>建圖模式</div>
+            </div>
+            <div class="big-card" onclick="showMapList()">
+                <div class="icon-lg">🛡️</div><div>巡邏模式</div>
+            </div>
+        </div>
+        <p id="sys-status" style="margin-top:30px; color:#666;">READY</p>
+    </div>
+
+    <div id="view-map-list" class="view">
+        <h2>選擇地圖</h2>
+        <div class="map-list" id="map-list-container"></div>
+        <button onclick="goHome()" style="margin-top:20px; padding:10px 30px; background:#444; color:#fff; border:none; border-radius:5px;">返回</button>
+    </div>
+
+    <div id="preview-modal" onclick="closePreview(event)">
+        <div id="preview-card" onclick="event.stopPropagation()">
+            <div id="preview-head">
+                <div id="preview-title">預覽</div>
+                <button class="btn-x" onclick="closePreview()">✕</button>
+            </div>
+            <div id="preview-body">
+                <img id="preview-img" src="" alt="preview"/>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-mapping" class="view">
+        <div id="dashboard-container">
+            <div class="top-navbar">
+                <span id="map-mode-text" class="nav-title">建圖模式</span>
+                <button class="btn-danger" onclick="stopSystem()">🛑 退出</button>
+            </div>
+            <div class="viewport">
+                <div id="map-scene" class="scene">
+                    <canvas id="cvs-map"></canvas>
+                    <div id="map-interaction-layer" class="interaction-layer"></div>
+                </div>
+            </div>
+            <div id="dpad-zone">
+                <div></div><div class="d-btn" onpointerdown="mv(0.2,0)" onpointerup="stop()" onpointerleave="stop()">▲</div><div></div>
+                <div class="d-btn" onpointerdown="mv(0,0.6)" onpointerup="stop()" onpointerleave="stop()">◀</div>
+                <div class="d-btn" onpointerdown="mv(-0.2,0)" onpointerup="stop()" onpointerleave="stop()">▼</div>
+                <div class="d-btn" onpointerdown="mv(0,-0.6)" onpointerup="stop()" onpointerleave="stop()">▶</div>
+            </div>
+            <div class="bottom-bar">
+                <button class="btn-icon" id="btn-auto" onclick="setMappingMode('auto')"><span>🤖</span><span>探索</span></button>
+                <button class="btn-icon" id="btn-nav" onclick="setMappingMode('nav')"><span>👆</span><span>導航</span></button>
+                <button class="btn-icon" id="btn-man" onclick="setMappingMode('manual')"><span>🕹️</span><span>手動</span></button>
+                <button class="btn-icon" onclick="saveMapPrompt()" style="background:#2979ff;"><span>💾</span><span>保存</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-patrol" class="view">
+        <div id="dashboard-container">
+            <div class="top-navbar">
+                <div>
+                    <span id="sp-status-bar" class="nav-title">巡邏模式</span>
+                    <span id="sp-map-name"></span>
+                </div>
+                <button class="btn-danger" onclick="stopSystem()">🛑 退出</button>
+            </div>
+
+            <div id="camera-window">
+                <div id="camera-header"><span>📷 相機</span><button onclick="toggleCamera()" style="background:transparent;border:none;color:white;">✕</button></div>
+                <div id="camera-body"><img id="camera-feed" src=""></div>
+            </div>
+
+            <div class="viewport">
+                <div id="sp-scene" class="scene">
+                    <canvas id="sp-canvas"></canvas>
+                    <div id="sp-marker-layer" class="marker-layer"></div>
+                    <div id="sp-interaction-layer" class="interaction-layer"></div>
+                </div>
+            </div>
+
+            <div class="bottom-bar" id="sp-bottom-bar">
+                <button id="btn-pose" class="sp-btn btn-blue" onclick="togglePoseMode()">📍 定位</button>
+                <button id="btn-goal" class="sp-btn btn-purple" onclick="toggleNavMode()">🏁 導航</button>
+
+                <div style="width:1px; height:30px; background:#555; margin:0 4px;"></div>
+
+                <button id="btn-action" class="sp-btn btn-grey" onclick="handlePatrolAction()">▶ 巡邏</button>
+                <button id="btn-rec" class="sp-btn btn-grey" onclick="toggleSpRecord()">●</button>
+                <button id="btn-trash" class="sp-btn btn-red hidden" onclick="clearSpPoints()">🗑</button>
+
+                <div style="width:1px; height:30px; background:#555; margin:0 4px;"></div>
+
+                <div class="edit-group">
+                    <button id="btn-edit" class="sp-btn btn-edit" onclick="toggleEditMode()">✏️ 編輯 ▾</button>
+
+                    <div id="edit-tools-panel" class="edit-panel hidden">
+                        <button id="tool-rename" class="sp-btn btn-grey" onclick="setEditTool('RENAME')">✏️ 房間改名</button>
+                        <button id="tool-split"  class="sp-btn btn-orange" onclick="setEditTool('SPLIT')">✂️ 分割</button>
+                        <button id="tool-merge"  class="sp-btn btn-purple" onclick="setEditTool('MERGE')">🔗 合併</button>
+                    </div>
+                </div>
+
+                <button id="btn-cam" class="sp-btn btn-orange" onclick="toggleCamera()">📷</button>
+                <button class="sp-btn btn-grey" onclick="resetSpView()">↺</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
