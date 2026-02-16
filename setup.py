@@ -24,6 +24,8 @@ setup(
         'opencv-python',
         'Pillow',
         'PyYAML',
+        'scipy',
+        'shapely',
     ],
     zip_safe=True,
     maintainer='kobuki_control_center maintainer',
